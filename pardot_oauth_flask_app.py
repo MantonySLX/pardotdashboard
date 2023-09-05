@@ -10,7 +10,7 @@ client_id = "3MVG9vrJTfRxlfl5mE9P222f0lPVcbroMn_i_eLgYtu_MTF2IBouHStVrA5nd5zSJTk
 client_secret = "C936BFCFED42379E749DDC26FC3F754082790DF4C83193C3BB8DC27D5885371B"
 authorization_base_url = "https://login.salesforce.com/services/oauth2/authorize"
 token_url = "https://login.salesforce.com/services/oauth2/token"
-redirect_uri = "https://oauth.pstmn.io/v1/browser-callback"
+redirect_uri = "https://pardotdashboard-7fc843d1f87a.herokuapp.com/"
 
 # Route for the home page
 @app.route("/")
