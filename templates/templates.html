@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pardot Email Templates</title>
+</head>
+<body>
+
+<h1>Pardot Email Templates</h1>
+
+<label for="accessToken">Access Token:</label>
+<input type="text" id="accessToken" placeholder="Enter your access token here">
+<br><br>
+
+<button onclick="fetchEmailTemplates()">Show me published email templates</button>
+<ul id="emailTemplatesList"></ul>
+
+<script>
+    function fetchEmailTemplates() {
+        const accessToken = document.getElementById('accessToken').value;
+        if (!accessToken) {
+            alert("Please enter the access token.");
+            return;
+        }
+
+        const fields = "id,name,isOneToOneEmail,isAutoResponderEmail,isDripEmail,isListEmail";  // Set as needed
+        fetch(`/get-email-templates?access_token=${accessToken}&fields=${fields}`)
+        .then(response => response.json())
+        .then(templates => {
+            const listElem = document.getElementById('emailTemplatesList');
+            listElem.innerHTML = ''; // Clear existing list.
+            templates.forEach(template => {
+                const li = document.createElement('li');
+                li.textContent = template.name; 
+                listElem.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching email templates:', error);
+        });
+    }
+</script>
+
+</body>
+</html>
