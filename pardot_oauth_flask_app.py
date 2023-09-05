@@ -21,7 +21,13 @@ def home():
 # Route to initiate OAuth2 process
 @app.route("/auth")
 def auth():
-    pardot = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=["full"])
+    pardot = OAuth2Session(client_id, redirect_uri=redirect_uri, scope = [
+    "refresh_token",
+    "offline_access",
+    "openid",
+    "pardot_api",
+    "cdp_query_api"
+])
     authorization_url, state = pardot.authorization_url(authorization_base_url)
     return redirect(authorization_url)
 
