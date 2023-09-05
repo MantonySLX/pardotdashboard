@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate Email Addresses in Pardot</title>
+</head>
+<body>
+
+<h1>Duplicate Email Addresses in Pardot</h1>
+
+<button onclick="fetchDuplicateEmails()">Show me duplicate email addresses</button>
+<ul id="duplicatesList"></ul>
+
+<script>
+    function fetchDuplicateEmails() {
+        fetch('/get-duplicate-email-addresses')
+        .then(response => response.json())
+        .then(emails => {
+            const listElem = document.getElementById('duplicatesList');
+            listElem.innerHTML = ''; // Clear existing list.
+            emails.forEach(email => {
+                const li = document.createElement('li');
+                li.textContent = email; 
+                listElem.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching duplicate emails:', error);
+        });
+    }
+</script>
+
+</body>
+</html>
