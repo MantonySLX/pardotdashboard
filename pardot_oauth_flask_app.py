@@ -1,6 +1,7 @@
 from flask import Flask, redirect, request, jsonify, render_template
 from requests_oauthlib import OAuth2Session
 import os
+import requests  # Added this import for making requests to the Pardot API.
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -15,7 +16,7 @@ redirect_uri = "https://pardotdashboard-7fc843d1f87a.herokuapp.com/"
 # Route for the home page
 @app.route("/")
 def home():
-    return 'Welcome to Pardot OAuth2 Test. <a href="/auth">Click here to authorize</a>'
+    return render_template('templates.html')  # Updated to serve the new frontend
 
 # Route to initiate OAuth2 process
 @app.route("/auth")
@@ -46,6 +47,28 @@ def dashboard():
     # Mock average open rate data (replace with actual data)
     average_open_rate = 25.5
     return render_template('dashboard.html', average_open_rate=average_open_rate)
+
+# New Route to fetch email templates
+@app.route("/get-email-templates")
+def get_email_templates():
+    access_token = request.args.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Access token is required"}), 400
+
+    # Get query parameters for filtering
+    fields = request.args.get("fields", "id,name,isOneToOneEmail,isAutoResponderEmail,isDripEmail,isListEmail")
+    
+    # Construct the full URL with query parameters
+    pardot_url = f"https://pi.pardot.com/api/v5/objects/email-templates?fields={fields}"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = requests.get(pardot_url, headers=headers)
+    
+    # Adjust based on the actual Pardot response format (for now, just returning the JSON response directly)
+    return jsonify(response.json())
 
 # Run the app
 if __name__ == "__main__":
