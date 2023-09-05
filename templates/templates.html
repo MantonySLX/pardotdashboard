@@ -10,7 +10,7 @@
 <h1>Pardot Email Templates</h1>
 
 <label for="accessToken">Access Token:</label>
-<input type="text" id="accessToken" placeholder="Enter your access token here">
+<input type="text" id="accessToken" placeholder="Enter your access token here" value="{{ access_token }}">
 <br><br>
 
 <button onclick="fetchEmailTemplates()">Show me published email templates</button>
@@ -40,6 +40,14 @@
             console.error('Error fetching email templates:', error);
         });
     }
+
+    // Add this to automatically fetch email templates if an access token is available.
+    document.addEventListener("DOMContentLoaded", function() {
+        const accessToken = document.getElementById('accessToken').value;
+        if (accessToken) {
+            fetchEmailTemplates();
+        }
+    });
 </script>
 
 </body>
