@@ -50,13 +50,16 @@ def logout():
 
 @app.route("/get-email-templates")
 def get_email_templates():
-    access_token = session.get("access_token")  # Changed to get from session
+    access_token = session.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is required"}), 400
 
     fields = "id,name,isOneToOneEmail,isAutoResponderEmail,isDripEmail,isListEmail"
     pardot_url = f"https://pi.pardot.com/api/v5/objects/email-templates?fields={fields}"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Added this header
+    }
     response = requests.get(pardot_url, headers=headers)
     return jsonify(response.json())
 
