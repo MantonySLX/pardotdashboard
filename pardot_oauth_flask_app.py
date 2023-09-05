@@ -8,9 +8,9 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 client_id = "3MVG9vrJTfRxlfl5mE9P222f0lPVcbroMn_i_eLgYtu_MTF2IBouHStVrA5nd5zSJTkSR1AHMe_U5ZUip6Len"
-client_secret = "YOUR_CLIENT_SECRET"
+client_secret = "C936BFCFED42379E749DDC26FC3F754082790DF4C83193C3BB8DC27D5885371B"
 authorization_base_url = "https://login.salesforce.com/services/oauth2/authorize"
-token_url = "C936BFCFED42379E749DDC26FC3F754082790DF4C83193C3BB8DC27D5885371B"
+token_url = "https://login.salesforce.com/services/oauth2/token"
 redirect_uri = "https://oauth.pstmn.io/v1/browser-callback"
 
 # Route for the home page
