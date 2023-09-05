@@ -48,6 +48,11 @@ def dashboard():
     average_open_rate = 25.5
     return render_template('dashboard.html', average_open_rate=average_open_rate)
 
+@app.route("/logout")
+def logout():
+    session.clear()  # This clears all session data
+    return redirect("/")
+
 @app.route("/get-email-templates")
 def get_email_templates():
     access_token = request.args.get("access_token")
