@@ -1,5 +1,4 @@
 from flask import Flask, redirect, request, jsonify, render_template
-from flask import Flask, redirect, request, jsonify
 from requests_oauthlib import OAuth2Session
 import os
 
@@ -21,13 +20,13 @@ def home():
 # Route to initiate OAuth2 process
 @app.route("/auth")
 def auth():
-    pardot = OAuth2Session(client_id, redirect_uri=redirect_uri, scope = [
-    "refresh_token",
-    "offline_access",
-    "openid",
-    "pardot_api",
-    "cdp_query_api"
-])
+    pardot = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=[
+        "refresh_token",
+        "offline_access",
+        "openid",
+        "pardot_api",
+        "cdp_query_api"
+    ])
     authorization_url, state = pardot.authorization_url(authorization_base_url)
     return redirect(authorization_url)
 
@@ -40,6 +39,13 @@ def callback():
     # Make a mock Pardot API call to get average open rate (replace this with an actual Pardot API call)
     average_open_rate = 25.5  # Mock data
     return jsonify({"access_token": token.get("access_token"), "average_open_rate": average_open_rate})
+
+# Route to render the dashboard
+@app.route("/dashboard")
+def dashboard():
+    # Mock average open rate data (replace with actual data)
+    average_open_rate = 25.5
+    return render_template('dashboard.html', average_open_rate=average_open_rate)
 
 # Run the app
 if __name__ == "__main__":
