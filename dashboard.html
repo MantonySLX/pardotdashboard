@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pardot Dashboard</title>
+</head>
+<body>
+    <h1>Email Data</h1>
+
+    <form method="get" action="/dashboard">
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date">
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date">
+        <button type="submit">Get Average Open Rate</button>
+    </form>
+
+    {% if average_open_rate %}
+        <p>Average Open Rate: {{ average_open_rate }}%</p>
+    {% endif %}
+</body>
+</html>
