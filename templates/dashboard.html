@@ -2,20 +2,43 @@
 <html>
 <head>
     <title>Pardot Dashboard</title>
+    <!-- Include any necessary CSS or other head content here -->
 </head>
 <body>
-    <h1>Email Data</h1>
+    <h1>Pardot Dashboard</h1>
+    <label for="start-date">Start Date:</label>
+    <input type="date" id="start-date">
+    <label for="end-date">End Date:</label>
+    <input type="date" id="end-date">
+    <button id="get-open-rate">Get Average Open Rate</button>
+    <div id="average-open-rate">Average Open Rate: N/A</div>
 
-    <form method="get" action="/dashboard">
-        <label for="start_date">Start Date:</label>
-        <input type="date" id="start_date" name="start_date">
-        <label for="end_date">End Date:</label>
-        <input type="date" id="end_date" name="end_date">
-        <button type="submit">Get Average Open Rate</button>
-    </form>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const getOpenRateButton = document.getElementById("get-open-rate");
+            const startDateInput = document.getElementById("start-date");
+            const endDateInput = document.getElementById("end-date");
+            const averageOpenRateDiv = document.getElementById("average-open-rate");
 
-    {% if average_open_rate %}
-        <p>Average Open Rate: {{ average_open_rate }}%</p>
-    {% endif %}
+            getOpenRateButton.addEventListener("click", function() {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+
+                fetch(`/dashboard?start_date=${startDate}&end_date=${endDate}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.average_open_rate !== undefined) {
+                            averageOpenRateDiv.textContent = `Average Open Rate: ${data.average_open_rate}%`;
+                        } else {
+                            averageOpenRateDiv.textContent = "Average Open Rate: N/A";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching data:", error);
+                        averageOpenRateDiv.textContent = "Error fetching data";
+                    });
+            });
+        });
+    </script>
 </body>
 </html>
