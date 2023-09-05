@@ -58,10 +58,32 @@ def get_email_templates():
     pardot_url = f"https://pi.pardot.com/api/v5/objects/email-templates?fields={fields}"
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Added this header
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
     response = requests.get(pardot_url, headers=headers)
     return jsonify(response.json())
+
+@app.route("/duplicates")
+def show_duplicates():
+    return render_template('duplicates.html')
+
+@app.route("/get-duplicate-email-addresses")
+def get_duplicate_email_addresses():
+    access_token = session.get("access_token")
+    
+    # Placeholder endpoint for retrieving all prospects
+    pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+    }
+    response = requests.get(pardot_url, headers=headers)
+    data = response.json()
+    
+    email_addresses = [prospect['email'] for prospect in data['prospect']]
+    duplicates = [email for email in set(email_addresses) if email_addresses.count(email) > 1]
+    return jsonify(duplicates)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
