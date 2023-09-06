@@ -80,3 +80,48 @@ def show_duplicates():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+@app.route("/visitor_activities")
+import requests
+
+def get_visitor_activities(pardot_id, utm_source):
+  """
+  Query visitor activities from the Pardot API.
+
+  Args:
+    pardot_id: The Pardot ID for the account.
+    utm_source: The UTM source parameter to filter by.
+
+  Returns:
+    A list of visitor activities.
+  """
+
+  url = f"https://api.pardot.com/visitorActivity/v4/do/query?pardotId={pardot_id}"
+  params = {
+    "utmSource": utm_source,
+    "type": "Page View"
+  }
+
+  response = requests.get(url, params=params)
+
+  if response.status_code == 200:
+    return response.json()["activities"]
+  else:
+    raise Exception(f"Error querying visitor activities: {response.status_code}")
+
+def main():
+  # Get the Pardot ID from the environment variables.
+  pardot_id = os.environ["PARDOT_ID"]
+
+  # Get the UTM source parameter from the command line arguments.
+  utm_source = sys.argv[1]
+
+  # Query visitor activities.
+  visitor_activities = get_visitor_activities(pardot_id, utm_source)
+
+  # Print the visitor activities.
+  for visitor_activity in visitor_activities:
+    print(visitor_activity)
+
+if __name__ == "__main__":
+  main()
