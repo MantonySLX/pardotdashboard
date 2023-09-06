@@ -1,7 +1,30 @@
+import requests
+from .objects.accounts import Accounts
+from .objects.customfields import CustomFields
+from .objects.customredirects import CustomRedirects
+from .objects.dynamiccontent import DynamicContent
+from .objects.emailclicks import EmailClicks
+from .objects.emailtemplates import EmailTemplates
+from .objects.forms import Forms
+from .objects.lifecyclehistories import LifecycleHistories
+from .objects.lifecyclestages import LifecycleStages
+from .objects.lists import Lists
+from .objects.listmemberships import ListMemberships
+from .objects.emails import Emails
+from .objects.prospects import Prospects
+from .objects.opportunities import Opportunities
+from .objects.prospectaccounts import ProspectAccounts
+from .objects.tags import Tags
+from .objects.tagobjects import TagObjects
+from .objects.users import Users
+from .objects.visits import Visits
+from .objects.visitors import Visitors
+from .objects.visitoractivities import VisitorActivities
+from .objects.campaigns import Campaigns
+from .errors import PardotAPIError
+import os
 from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
-import os
-import requests
 import collections
 
 # Setup Flask app and environment variables
@@ -15,6 +38,31 @@ client_secret = "C936BFCFED42379E749DDC26FC3F754082790DF4C83193C3BB8DC27D5885371
 authorization_base_url = "https://login.salesforce.com/services/oauth2/authorize"
 token_url = "https://login.salesforce.com/services/oauth2/token"
 redirect_uri = "https://pardotdashboard-7fc843d1f87a.herokuapp.com/callback"
+
+class PardotAPI(object):
+    self.accounts = Accounts(self)
+        self.campaigns = Campaigns(self)
+        self.customfields = CustomFields(self)
+        self.customredirects = CustomRedirects(self)
+        self.dynamiccontent = DynamicContent(self)
+        self.emailclicks = EmailClicks(self)
+        self.emails = Emails(self)
+        self.emailtemplates = EmailTemplates(self)
+        self.forms = Forms(self)
+        self.lifecyclehistories = LifecycleHistories(self)
+        self.lifecyclestages = LifecycleStages(self)
+        self.listmemberships = ListMemberships(self)
+        self.lists = Lists(self)
+        self.opportunities = Opportunities(self)
+        self.prospects = Prospects(self)
+        self.prospectaccounts = ProspectAccounts(self)
+        self.tags = Tags(self)
+        self.tagobjects = TagObjects(self)
+        self.users = Users(self)
+        self.visits = Visits(self)
+        self.visitors = Visitors(self)
+        self.visitoractivities = VisitorActivities(self)
+
 
 @app.route("/")
 def main():
