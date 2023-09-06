@@ -96,7 +96,11 @@ def find_qualified_prospects():
         params={"query": "Source=SLX", "type": "Page View"}
     )
     visitor_activities_data = response.json()
-
+if 'data' in visitor_activities_data:
+        unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
+    else:
+        print("Data key not found in visitor_activities_data")
+        unique_prospect_ids = set()  # or handle this case appropriately
     # Step 2: Identify Prospects
     unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
 
