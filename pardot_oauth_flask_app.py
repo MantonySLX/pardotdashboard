@@ -89,5 +89,9 @@ def fetch_visitor_page_views():
     else:
         return jsonify({"error": "Failed to fetch data"}), 500
 
+@app.route("/visitor-page-views")
+def visitor_page_views():
+    return render_template('visitor_page_views.html')
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
