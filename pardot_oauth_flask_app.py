@@ -40,7 +40,7 @@ token_url = "https://login.salesforce.com/services/oauth2/token"
 redirect_uri = "https://pardotdashboard-7fc843d1f87a.herokuapp.com/callback"
 
 class PardotAPI(object):
-    self.accounts = Accounts(self)
+        self.accounts = Accounts(self)
         self.campaigns = Campaigns(self)
         self.customfields = CustomFields(self)
         self.customredirects = CustomRedirects(self)
