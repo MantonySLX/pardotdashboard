@@ -1,14 +1,11 @@
-import flask
-from flask import redirect, request, jsonify, render_template, session, flash
+from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
 import os
 import requests
 import collections
-from collections import defaultdict
-import datetime
 
 # Setup Flask app and environment variables
-app = flask.Flask(__name__)
+app = Flask(__name__)
 app.secret_key = os.urandom(24)
 app.config['SESSION_TYPE'] = 'filesystem'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -59,16 +56,17 @@ def get_duplicate_email_addresses():
         return jsonify({"error": "Access token is required"}), 400
 
     pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
     response = requests.get(pardot_url, headers=headers)
     data = response.json()
 
+    # If the API returns a single dictionary instead of a list
     if isinstance(data, dict) and 'email' in data:
         email_addresses = [data['email']]
-    elif isinstance(data, list):
+    elif isinstance(data, list):  # If it's a list of dictionaries
         email_addresses = [prospect['email'] for prospect in data]
     else:
         return jsonify({"error": "Unexpected API response format"}), 500
@@ -80,71 +78,5 @@ def get_duplicate_email_addresses():
 def show_duplicates():
     return render_template('duplicates.html')
 
-@app.route("/find-qualified-prospects")
-def find_qualified_prospects():
-@app.route("/find-qualified-prospects")
-    import requests
-    import json
-
-# The Pardot API endpoint for querying visitor activities
-visitor_activities_endpoint = "https://ap2.salesforce.com/services/data/v46.0/visitorActivities/query"
-
-# The UTM parameter value to filter for
-utm_source = "SLX"
-
-# The type of visitor activity to filter for
-activity_type = "Page View"
-
-# The date to start filtering for opportunities created after
-opportunity_creation_date = "2023-09-06"
-
-# The number of days to filter for opportunities created within
-opportunity_creation_window_days = 90
-
-# Get the visitor activities
-response = requests.get(
-    visitor_activities_endpoint,
-    params={
-        "query": "utm_source eq '{}' and activity_type eq '{}'".format(
-            utm_source, activity_type
-        )
-    }
-)
-
-if response.status_code == 200:
-    visitor_activities = json.loads(response.content)
-
-    # Identify the unique prospect IDs
-    prospect_ids = set()
-    for visitor_activity in visitor_activities:
-        prospect_ids.add(visitor_activity["prospectId"])
-
-    # Check opportunity creation for each prospect ID
-    opportunities = []
-    for prospect_id in prospect_ids:
-        # Get the opportunities associated with the prospect ID
-        response = requests.get(
-            "https://ap2.salesforce.com/services/data/v46.0/opportunities/query",
-            params={
-                "query": "prospectId eq '{}' and createdDate gt '{}'".format(
-                    prospect_id, opportunity_creation_date
-                )
-            }
-        )
-
-        if response.status_code == 200:
-            opportunities.extend(json.loads(response.content))
-
-    # Compile the results
-    prospect_ids_with_opportunities = []
-    for opportunity in opportunities:
-        if (
-            opportunity["createdDate"] - opportunity_creation_date
-            <= opportunity_creation_window_days
-        ):
-            prospect_ids_with_opportunities.append(opportunity["prospectId"])
-
-    print(prospect_ids_with_opportunities)
-
-else:
-    print("Error getting visitor activities.")
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
