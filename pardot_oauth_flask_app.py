@@ -80,45 +80,68 @@ def show_duplicates():
     return render_template('duplicates.html')
 
 @app.route("/find-qualified-prospects")
-def find_qualified_prospects():
-    access_token = session.get("access_token")
-    if not access_token:
-        return jsonify({"error": "Access token is required"}), 400
+import requests
+import json
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+# The Pardot API endpoint for querying visitor activities
+visitor_activities_endpoint = "https://ap2.salesforce.com/services/data/v46.0/visitorActivities/query"
+
+# The UTM parameter value to filter for
+utm_source = "SLX"
+
+# The type of visitor activity to filter for
+activity_type = "Page View"
+
+# The date to start filtering for opportunities created after
+opportunity_creation_date = "2023-09-06"
+
+# The number of days to filter for opportunities created within
+opportunity_creation_window_days = 90
+
+# Get the visitor activities
+response = requests.get(
+    visitor_activities_endpoint,
+    params={
+        "query": "utm_source eq '{}' and activity_type eq '{}'".format(
+            utm_source, activity_type
+        )
     }
+)
 
-    # Calculate the date 90 days ago from today
-    ninety_days_ago = (datetime.datetime.now() - datetime.timedelta(days=90)).isoformat()
+if response.status_code == 200:
+    visitor_activities = json.loads(response.content)
 
-    # Define the parameters for the query
-    params = {
-        "fields": "id,visitorId,campaignId",
-        "createdAtAfter": ninety_days_ago
-    }
+    # Identify the unique prospect IDs
+    prospect_ids = set()
+    for visitor_activity in visitor_activities:
+        prospect_ids.add(visitor_activity["prospectId"])
 
-    response = requests.get(
-        "https://pi.pardot.com/api/v5/objects/visitor-page-views",
-        headers=headers,
-        params=params
-    )
-    visitor_page_views_data = response.json()
+    # Check opportunity creation for each prospect ID
+    opportunities = []
+    for prospect_id in prospect_ids:
+        # Get the opportunities associated with the prospect ID
+        response = requests.get(
+            "https://ap2.salesforce.com/services/data/v46.0/opportunities/query",
+            params={
+                "query": "prospectId eq '{}' and createdDate gt '{}'".format(
+                    prospect_id, opportunity_creation_date
+                )
+            }
+        )
 
-    if 'values' in visitor_page_views_data:
-        qualified_prospects = {
-            entry['visitorId']: entry['id']
-            for entry in visitor_page_views_data['values']
-        }
-        flash(f"Step 1: Found {len(qualified_prospects)} qualified prospects.")
-    else:
-        flash("Step 1: Data key not found in visitor_page_views_data")
-        qualified_prospects = {}
+        if response.status_code == 200:
+            opportunities.extend(json.loads(response.content))
 
-    flash(f"Step 3: Found qualified prospects: {qualified_prospects}")
+    # Compile the results
+    prospect_ids_with_opportunities = []
+    for opportunity in opportunities:
+        if (
+            opportunity["createdDate"] - opportunity_creation_date
+            <= opportunity_creation_window_days
+        ):
+            prospect_ids_with_opportunities.append(opportunity["prospectId"])
 
-    return jsonify({"qualified_prospects": qualified_prospects})
+    print(prospect_ids_with_opportunities)
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+else:
+    print("Error getting visitor activities.")
