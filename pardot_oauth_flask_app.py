@@ -62,60 +62,32 @@ def get_duplicate_email_addresses():
     }
     response = requests.get(pardot_url, headers=headers)
     data = response.json()
-
-    # If the API returns a single dictionary instead of a list
-    if isinstance(data, dict) and 'email' in data:
-        email_addresses = [data['email']]
-    elif isinstance(data, list):  # If it's a list of dictionaries
-        email_addresses = [prospect['email'] for prospect in data]
-    else:
-        return jsonify({"error": "Unexpected API response format"}), 500
-
-    duplicates = [item for item, count in collections.Counter(email_addresses).items() if count > 1]
-    return jsonify({"duplicate_emails": duplicates})
+    
+    # Your existing code for handling duplicate email addresses
+    # ...
 
 @app.route("/duplicates")
 def show_duplicates():
     return render_template('duplicates.html')
 
-from flask import Flask, jsonify, request, session
-import requests
-import os
-
-# Setup Flask app and environment variables
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
-app.config['SESSION_TYPE'] = 'filesystem'
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
-# Other existing code and routes ...
-
 @app.route("/fetch-visitor-page-views")
 def fetch_visitor_page_views():
     id = request.args.get('id')
-    
-    # Check if access token is available in the session
     access_token = session.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is required"}), 400
     
-    # Define the Pardot API URL
-    pardot_url = f"https://pi.pardot.com/api/v5/objects/visitor-page-views/{id}?fields=id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId,visitor.id,visitor.campaignId,visitor.campaignParameter,visitor.contentParameter,visitor.hostname,visitor.ipAddress,visitor.isDeleted,visitor.mediumParameter,visitor.pageViewCount,visitor.prospectId,visitor.sourceParameter,visitor.termParameter,visitor.createdAt,visitor.updatedAt,visitor.isIdentified,visitor.doNotSell,campaign.id,campaign.name,campaign.folderId,campaign.cost,campaign.parentCampaignId,campaign.isDeleted,campaign.createdById,campaign.updatedById,campaign.createdAt,campaign.updatedAt,campaign.salesforceId,visit.id,visit.visitorId,visit.prospectId,visit.visitorPageViewCount,visit.firstVisitorPageViewAt,visit.lastVisitorPageViewAt,visit.durationInSeconds,visit.campaignParameter,visit.mediumParameter,visit.sourceParameter,visit.contentParameter,visit.termParameter,visit.createdAt,visit.updatedAt"
-    
+    pardot_url = f"https://pi.pardot.com/api/v5/objects/visitor-page-views/{id}?fields=...your_fields_here..."
     headers = {
         "Authorization": f"Bearer {access_token}"
     }
-    
-    # Make the API call
     response = requests.get(pardot_url, headers=headers)
     
-    # Check the response
     if response.status_code == 200:
         data = response.json()
         return jsonify({"data": data})
     else:
         return jsonify({"error": "Failed to fetch data"}), 500
-
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
