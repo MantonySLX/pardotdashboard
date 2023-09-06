@@ -78,5 +78,46 @@ def get_duplicate_email_addresses():
 def show_duplicates():
     return render_template('duplicates.html')
 
+@app.route("/find-qualified-prospects")
+def find_qualified_prospects():
+    access_token = session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Access token is required"}), 400
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+    }
+
+    # Step 1: Query Visitor Activities
+    response = requests.get(
+        "https://pi.pardot.com/api/v5/objects/visitorActivities", 
+        headers=headers, 
+        params={"query": "Source=SLX", "type": "Page View"}
+    )
+    visitor_activities_data = response.json()
+
+    # Step 2: Identify Prospects
+    unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
+
+    # Step 3: Check Opportunity Creation
+    qualified_prospects = defaultdict(list)
+    for prospect_id in unique_prospect_ids:
+        response = requests.get(
+            "https://pi.pardot.com/api/v5/objects/opportunities", 
+            headers=headers, 
+            params={"prospect_id": prospect_id}
+        )
+        opportunities_data = response.json()
+        
+        for opportunity in opportunities_data['data']:
+            created_date = datetime.datetime.strptime(opportunity['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            if (datetime.datetime.now() - created_date).days <= 90:
+                qualified_prospects[prospect_id].append(opportunity['id'])
+
+    # Step 4: Compile Results
+    return jsonify({"qualified_prospects": dict(qualified_prospects)})
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
