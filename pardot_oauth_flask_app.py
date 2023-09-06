@@ -3,6 +3,8 @@ from requests_oauthlib import OAuth2Session
 import os
 import requests
 import collections
+from collections import defaultdict
+import datetime
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -63,10 +65,9 @@ def get_duplicate_email_addresses():
     response = requests.get(pardot_url, headers=headers)
     data = response.json()
 
-    # If the API returns a single dictionary instead of a list
     if isinstance(data, dict) and 'email' in data:
         email_addresses = [data['email']]
-    elif isinstance(data, list):  # If it's a list of dictionaries
+    elif isinstance(data, list):
         email_addresses = [prospect['email'] for prospect in data]
     else:
         return jsonify({"error": "Unexpected API response format"}), 500
@@ -88,40 +89,34 @@ def find_qualified_prospects():
         "Authorization": f"Bearer {access_token}",
         "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
-
-    # Step 1: Query Visitor Activities
     response = requests.get(
-        "https://pi.pardot.com/api/v5/objects/visitorActivities", 
-        headers=headers, 
+        "https://pi.pardot.com/api/v5/objects/visitorActivities",
+        headers=headers,
         params={"query": "Source=SLX", "type": "Page View"}
     )
     visitor_activities_data = response.json()
-        if 'data' in visitor_activities_data:
-        unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
-        else:
-        print("Data key not found in visitor_activities_data")
-        unique_prospect_ids = set()  # or handle this case appropriately
-    # Step 2: Identify Prospects
-    unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
 
-    # Step 3: Check Opportunity Creation
+    if 'data' in visitor_activities_data:
+        unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
+    else:
+        print("Data key not found in visitor_activities_data")
+        unique_prospect_ids = set()
+
     qualified_prospects = defaultdict(list)
     for prospect_id in unique_prospect_ids:
         response = requests.get(
-            "https://pi.pardot.com/api/v5/objects/opportunities", 
-            headers=headers, 
+            "https://pi.pardot.com/api/v5/objects/opportunities",
+            headers=headers,
             params={"prospect_id": prospect_id}
         )
         opportunities_data = response.json()
-        
+
         for opportunity in opportunities_data['data']:
             created_date = datetime.datetime.strptime(opportunity['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
             if (datetime.datetime.now() - created_date).days <= 90:
                 qualified_prospects[prospect_id].append(opportunity['id'])
 
-    # Step 4: Compile Results
     return jsonify({"qualified_prospects": dict(qualified_prospects)})
-
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
