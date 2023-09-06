@@ -113,6 +113,5 @@ def get_visitor_activities():
 
     return jsonify({"prospect_ids": prospect_ids})
 
-
-
-
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
