@@ -78,8 +78,6 @@ def get_duplicate_email_addresses():
 def show_duplicates():
     return render_template('duplicates.html')
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 @app.route("/get-visitor-activities")
 def get_visitor_activities():
