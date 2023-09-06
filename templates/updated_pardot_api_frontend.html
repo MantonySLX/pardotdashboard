@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pardot API Front-end</title>
+    <style>
+        body {
+            font-family: Roboto, sans-serif;
+        }
+        .container {
+            margin: 20px;
+        }
+        button {
+            background-color: #1cafec;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Pardot API Front-end</h1>
+        <label for="keyword">Enter the keyword for URL:</label>
+        <input type="text" id="keyword" name="keyword">
+        <button onclick="fetchProspectIDs()">Fetch Prospect IDs</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // JavaScript code to interact with the new Flask route
+        async function fetchProspectIDs() {
+            const keyword = document.getElementById("keyword").value;
+            const resultDiv = document.getElementById("result");
+
+            // Make AJAX call to the new Flask route
+            const response = await fetch(`/get-prospect-ids-by-keyword?keyword=${keyword}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                resultDiv.innerHTML = `<h3>Error: ${data.error}</h3>`;
+            } else {
+                const prospectIDs = data.prospect_ids;
+                resultDiv.innerHTML = `<h3>First 200 Prospect IDs who visited pages containing the keyword '${keyword}':</h3>`;
+                resultDiv.innerHTML += prospectIDs.join(", ");
+            }
+        }
+    </script>
+
+</body>
+</html>
