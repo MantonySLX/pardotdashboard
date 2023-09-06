@@ -114,7 +114,7 @@ def find_qualified_prospects():
 
         for opportunity in opportunities_data['data']:
             created_date = datetime.datetime.strptime(opportunity['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            if (datetime.datetime.now() - created_date).days <= 90:
+            if (datetime.datetime.now() - created_date).days <= 365:
                 qualified_prospects[prospect_id].append(opportunity['id'])
 
     flash(f"Step 3: Found qualified prospects: {dict(qualified_prospects)}")
