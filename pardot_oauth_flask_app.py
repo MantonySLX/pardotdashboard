@@ -111,5 +111,45 @@ def get_visitor_activities():
 
     return jsonify({"prospect_ids": prospect_ids})
 
+@app.route("/get-prospect-ids-by-keyword", methods=["GET"])
+def get_prospect_ids_by_keyword():
+    access_token = session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Access token is required"}), 400
+
+    keyword = request.args.get('keyword')
+    if not keyword:
+        return jsonify({"error": "Keyword is required"}), 400
+
+    pardot_url = "https://api.pardot.com/visitorActivity/version/4/do/query"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
+        "Content-Type": "application/json"
+    }
+    
+    query = {
+        "filters": [
+            {
+                "field": "details.url",
+                "operator": "contains",
+                "value": keyword
+            }
+        ]
+    }
+
+    response = requests.get(pardot_url, headers=headers, json=query)
+    data = response.json()
+
+    if isinstance(data, list):
+        prospect_ids = [activity['prospect_id'] for activity in data if activity.get('prospect_id')]
+        prospect_ids = list(set(prospect_ids))  # Remove duplicates
+        prospect_ids = prospect_ids[:200]  # Limit to first 200
+    else:
+        return jsonify({"error": "Unexpected API response format"}), 500
+
+    return jsonify({"prospect_ids": prospect_ids})
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
