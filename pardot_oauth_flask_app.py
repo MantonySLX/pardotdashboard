@@ -90,41 +90,35 @@ def find_qualified_prospects():
         "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
 
-    # Step 1: Query Visitor Activities (Page Views in the last 90 days)
-    end_date = datetime.datetime.now()
-    start_date = end_date - datetime.timedelta(days=90)
-    
+    # Calculate the date 90 days ago from today
+    ninety_days_ago = (datetime.datetime.now() - datetime.timedelta(days=90)).isoformat()
+
+    # Define the parameters for the query
+    params = {
+        "fields": "id,visitorId,campaignId",
+        "createdAtAfter": ninety_days_ago
+    }
+
     response = requests.get(
-        "https://pi.pardot.com/api/v5/objects/visitorActivities", 
-        headers=headers, 
-        params={"type": "Page View", "updated_after": start_date.isoformat()}
+        "https://pi.pardot.com/api/v5/objects/visitor-page-views",
+        headers=headers,
+        params=params
     )
-    visitor_activities_data = response.json()
+    visitor_page_views_data = response.json()
 
-    if 'data' in visitor_activities_data:
-        unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
-        flash(f"Step 1: Found {len(unique_prospect_ids)} unique prospect IDs.")
+    if 'values' in visitor_page_views_data:
+        qualified_prospects = {
+            entry['visitorId']: entry['id']
+            for entry in visitor_page_views_data['values']
+        }
+        flash(f"Step 1: Found {len(qualified_prospects)} qualified prospects.")
     else:
-        flash("Step 1: Data key not found in visitor_activities_data")
-        unique_prospect_ids = set()
+        flash("Step 1: Data key not found in visitor_page_views_data")
+        qualified_prospects = {}
 
-    qualified_prospects = defaultdict(list)
-    for prospect_id in unique_prospect_ids:
-        response = requests.get(
-            "https://pi.pardot.com/api/v5/objects/opportunities",
-            headers=headers,
-            params={"prospect_id": prospect_id}
-        )
-        opportunities_data = response.json()
+    flash(f"Step 3: Found qualified prospects: {qualified_prospects}")
 
-        for opportunity in opportunities_data['data']:
-            created_date = datetime.datetime.strptime(opportunity['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            if (datetime.datetime.now() - created_date).days <= 365:
-                qualified_prospects[prospect_id].append(opportunity['id'])
-
-    flash(f"Step 3: Found qualified prospects: {dict(qualified_prospects)}")
-
-    return jsonify({"qualified_prospects": dict(qualified_prospects)})
+    return jsonify({"qualified_prospects": qualified_prospects})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
