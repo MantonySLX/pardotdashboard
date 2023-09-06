@@ -92,7 +92,7 @@ def find_qualified_prospects():
     response = requests.get(
         "https://pi.pardot.com/api/v5/objects/visitorActivities",
         headers=headers,
-        params={"query": "type": "Page View"}
+        params={"type": "Page View"}
     )
     visitor_activities_data = response.json()
 
