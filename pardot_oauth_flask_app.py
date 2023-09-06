@@ -2,7 +2,7 @@ from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
 import os
 import requests
-import collections  # added for Counter
+import collections
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -63,11 +63,14 @@ def get_duplicate_email_addresses():
     response = requests.get(pardot_url, headers=headers)
     data = response.json()
 
-    # Assuming data is a list of dictionaries
-    if not isinstance(data, list):
+    # If the API returns a single dictionary instead of a list
+    if isinstance(data, dict) and 'email' in data:
+        email_addresses = [data['email']]
+    elif isinstance(data, list):  # If it's a list of dictionaries
+        email_addresses = [prospect['email'] for prospect in data]
+    else:
         return jsonify({"error": "Unexpected API response format"}), 500
 
-    email_addresses = [prospect['email'] for prospect in data]
     duplicates = [item for item, count in collections.Counter(email_addresses).items() if count > 1]
     return jsonify({"duplicate_emails": duplicates})
 
