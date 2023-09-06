@@ -80,8 +80,8 @@ def show_duplicates():
     return render_template('duplicates.html')
 
 @app.route("/find-qualified-prospects")
-import requests
-import json
+    import requests
+    import json
 
 # The Pardot API endpoint for querying visitor activities
 visitor_activities_endpoint = "https://ap2.salesforce.com/services/data/v46.0/visitorActivities/query"
