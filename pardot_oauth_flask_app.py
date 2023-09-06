@@ -150,6 +150,10 @@ def get_prospect_ids_by_keyword():
 
     return jsonify({"prospect_ids": prospect_ids})
 
+@app.route("/updated_pardot_api_frontend")
+def updated_pardot_api_frontend():
+    return render_template('updated_pardot_api_frontend.html')
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
