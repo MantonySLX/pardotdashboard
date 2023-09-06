@@ -1,4 +1,5 @@
-from flask import Flask, redirect, request, jsonify, render_template, session, flash
+import flask
+from flask import redirect, request, jsonify, render_template, session, flash
 from requests_oauthlib import OAuth2Session
 import os
 import requests
@@ -7,7 +8,7 @@ from collections import defaultdict
 import datetime
 
 # Setup Flask app and environment variables
-app = Flask(__name__)
+app = flask.Flask(__name__)
 app.secret_key = os.urandom(24)
 app.config['SESSION_TYPE'] = 'filesystem'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -79,6 +80,8 @@ def get_duplicate_email_addresses():
 def show_duplicates():
     return render_template('duplicates.html')
 
+@app.route("/find-qualified-prospects")
+def find_qualified_prospects():
 @app.route("/find-qualified-prospects")
     import requests
     import json
