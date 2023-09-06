@@ -2,6 +2,7 @@ from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
 import os
 import requests
+import collections  # added for Counter
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -73,24 +74,6 @@ def get_duplicate_email_addresses():
 @app.route("/duplicates")
 def show_duplicates():
     return render_template('duplicates.html')
-
-@app.route("/get-duplicate-email-addresses")
-def get_duplicate_email_addresses():
-    access_token = session.get("access_token")
-    
-    # Placeholder endpoint for retrieving all prospects
-    pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
-    }
-    response = requests.get(pardot_url, headers=headers)
-    data = response.json()
-    
-    email_addresses = [prospect['email'] for prospect in data['prospect']]
-    duplicates = [email for email in set(email_addresses) if email_addresses.count(email) > 1]
-    return jsonify(duplicates)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
