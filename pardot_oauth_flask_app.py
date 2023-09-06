@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, jsonify, render_template, session
+from flask import Flask, redirect, request, jsonify, render_template, session, flash
 from requests_oauthlib import OAuth2Session
 import os
 import requests
@@ -98,8 +98,9 @@ def find_qualified_prospects():
 
     if 'data' in visitor_activities_data:
         unique_prospect_ids = set(activity['prospect']['id'] for activity in visitor_activities_data['data'])
+        flash(f"Step 1: Found {len(unique_prospect_ids)} unique prospect IDs.")
     else:
-        print("Data key not found in visitor_activities_data")
+        flash("Step 1: Data key not found in visitor_activities_data")
         unique_prospect_ids = set()
 
     qualified_prospects = defaultdict(list)
@@ -115,6 +116,8 @@ def find_qualified_prospects():
             created_date = datetime.datetime.strptime(opportunity['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
             if (datetime.datetime.now() - created_date).days <= 90:
                 qualified_prospects[prospect_id].append(opportunity['id'])
+
+    flash(f"Step 3: Found qualified prospects: {dict(qualified_prospects)}")
 
     return jsonify({"qualified_prospects": dict(qualified_prospects)})
 
