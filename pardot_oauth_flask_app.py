@@ -48,20 +48,27 @@ def logout():
     session.clear()
     return redirect("/")
 
-@app.route("/get-email-templates")
-def get_email_templates():
+@app.route("/get-duplicate-email-addresses")
+def get_duplicate_email_addresses():
     access_token = session.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is required"}), 400
 
-    fields = "id,name,isOneToOneEmail,isAutoResponderEmail,isDripEmail,isListEmail"
-    pardot_url = f"https://pi.pardot.com/api/v5/objects/email-templates?fields={fields}"
+    pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
     response = requests.get(pardot_url, headers=headers)
-    return jsonify(response.json())
+    data = response.json()
+
+    # Assuming data is a list of dictionaries
+    if not isinstance(data, list):
+        return jsonify({"error": "Unexpected API response format"}), 500
+
+    email_addresses = [prospect['email'] for prospect in data]
+    duplicates = [item for item, count in collections.Counter(email_addresses).items() if count > 1]
+    return jsonify({"duplicate_emails": duplicates})
 
 @app.route("/duplicates")
 def show_duplicates():
