@@ -81,46 +81,38 @@ def show_duplicates():
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
-@app.route("/visitor_activities")
+@app.route("/get-visitor-activities")
+def get_visitor_activities():
+    access_token = session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Access token is required"}), 400
 
-def get_visitor_activities(pardot_id, utm_source):
-  """
-  Query visitor activities from the Pardot API.
+    # Define the endpoint and headers
+    pardot_url = "https://pi.pardot.com/api/v5/objects/visitor-activities"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+    }
 
-  Args:
-    pardot_id: The Pardot ID for the account.
-    utm_source: The UTM source parameter to filter by.
+    # Set the query parameters based on the given SQL query
+    params = {
+        "type": "2",
+        "url": "%SLX%",
+        "activity_date": "NOW() - INTERVAL 90 DAY"
+    }
 
-  Returns:
-    A list of visitor activities.
-  """
+    # Make the GET request
+    response = requests.get(pardot_url, headers=headers, params=params)
+    data = response.json()
 
-  url = f"https://api.pardot.com/visitorActivity/v4/do/query?pardotId={pardot_id}"
-  params = {
-    "utmSource": utm_source,
-    "type": "Page View"
-  }
+    # Extract the prospect_id values from the response
+    if isinstance(data, list):
+        prospect_ids = [activity['prospect_id'] for activity in data if activity.get('prospect_id')]
+    else:
+        return jsonify({"error": "Unexpected API response format"}), 500
 
-  response = requests.get(url, params=params)
+    return jsonify({"prospect_ids": prospect_ids})
 
-  if response.status_code == 200:
-    return response.json()["activities"]
-  else:
-    raise Exception(f"Error querying visitor activities: {response.status_code}")
 
-def main():
-  # Get the Pardot ID from the environment variables.
-  pardot_id = os.environ["PARDOT_ID"]
 
-  # Get the UTM source parameter from the command line arguments.
-  utm_source = sys.argv[1]
 
-  # Query visitor activities.
-  visitor_activities = get_visitor_activities(pardot_id, utm_source)
-
-  # Print the visitor activities.
-  for visitor_activity in visitor_activities:
-    print(visitor_activity)
-
-if __name__ == "__main__":
-  main()
