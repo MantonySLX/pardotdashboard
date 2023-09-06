@@ -82,7 +82,6 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 @app.route("/visitor_activities")
-import requests
 
 def get_visitor_activities(pardot_id, utm_source):
   """
