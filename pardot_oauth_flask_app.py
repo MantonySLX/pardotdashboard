@@ -89,10 +89,15 @@ def find_qualified_prospects():
         "Authorization": f"Bearer {access_token}",
         "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
+
+    # Step 1: Query Visitor Activities (Page Views in the last 90 days)
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(days=90)
+    
     response = requests.get(
-        "https://pi.pardot.com/api/v5/objects/visitorActivities",
-        headers=headers,
-        params={"type": "Page View"}
+        "https://pi.pardot.com/api/v5/objects/visitorActivities", 
+        headers=headers, 
+        params={"type": "Page View", "updated_after": start_date.isoformat()}
     )
     visitor_activities_data = response.json()
 
