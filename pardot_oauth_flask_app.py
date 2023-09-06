@@ -78,81 +78,43 @@ def get_duplicate_email_addresses():
 def show_duplicates():
     return render_template('duplicates.html')
 
+from flask import Flask, jsonify, request, session
+import requests
+import os
 
-@app.route("/get-visitor-activities")
-def get_visitor_activities():
+# Setup Flask app and environment variables
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
+app.config['SESSION_TYPE'] = 'filesystem'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+# Other existing code and routes ...
+
+@app.route("/fetch-visitor-page-views")
+def fetch_visitor_page_views():
+    id = request.args.get('id')
+    
+    # Check if access token is available in the session
     access_token = session.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is required"}), 400
-
-    # Define the endpoint and headers
-    pardot_url = "https://pi.pardot.com/api/v5/objects/visitor-activities"
+    
+    # Define the Pardot API URL
+    pardot_url = f"https://pi.pardot.com/api/v5/objects/visitor-page-views/{id}?fields=id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId,visitor.id,visitor.campaignId,visitor.campaignParameter,visitor.contentParameter,visitor.hostname,visitor.ipAddress,visitor.isDeleted,visitor.mediumParameter,visitor.pageViewCount,visitor.prospectId,visitor.sourceParameter,visitor.termParameter,visitor.createdAt,visitor.updatedAt,visitor.isIdentified,visitor.doNotSell,campaign.id,campaign.name,campaign.folderId,campaign.cost,campaign.parentCampaignId,campaign.isDeleted,campaign.createdById,campaign.updatedById,campaign.createdAt,campaign.updatedAt,campaign.salesforceId,visit.id,visit.visitorId,visit.prospectId,visit.visitorPageViewCount,visit.firstVisitorPageViewAt,visit.lastVisitorPageViewAt,visit.durationInSeconds,visit.campaignParameter,visit.mediumParameter,visit.sourceParameter,visit.contentParameter,visit.termParameter,visit.createdAt,visit.updatedAt"
+    
     headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
-    }
-
-    # Set the query parameters based on the given SQL query
-    params = {
-        "type": "2",
-        "url": "%SLX%",
-        "activity_date": "NOW() - INTERVAL 90 DAY"
-    }
-
-    # Make the GET request
-    response = requests.get(pardot_url, headers=headers, params=params)
-    data = response.json()
-
-    # Extract the prospect_id values from the response
-    if isinstance(data, list):
-        prospect_ids = [activity['prospect_id'] for activity in data if activity.get('prospect_id')]
-    else:
-        return jsonify({"error": "Unexpected API response format"}), 500
-
-    return jsonify({"prospect_ids": prospect_ids})
-
-@app.route("/get-prospect-ids-by-keyword", methods=["GET"])
-def get_prospect_ids_by_keyword():
-    access_token = session.get("access_token")
-    if not access_token:
-        return jsonify({"error": "Access token is required"}), 400
-
-    keyword = request.args.get('keyword')
-    if not keyword:
-        return jsonify({"error": "Keyword is required"}), 400
-
-    pardot_url = "https://api.pardot.com/visitorActivity/version/4/do/query"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {access_token}"
     }
     
-    query = {
-        "filters": [
-            {
-                "field": "details.url",
-                "operator": "contains",
-                "value": keyword
-            }
-        ]
-    }
-
-    response = requests.get(pardot_url, headers=headers, json=query)
-    data = response.json()
-
-    if isinstance(data, list):
-        prospect_ids = [activity['prospect_id'] for activity in data if activity.get('prospect_id')]
-        prospect_ids = list(set(prospect_ids))  # Remove duplicates
-        prospect_ids = prospect_ids[:200]  # Limit to first 200
+    # Make the API call
+    response = requests.get(pardot_url, headers=headers)
+    
+    # Check the response
+    if response.status_code == 200:
+        data = response.json()
+        return jsonify({"data": data})
     else:
-        return jsonify({"error": "Unexpected API response format"}), 500
-
-    return jsonify({"prospect_ids": prospect_ids})
-
-@app.route("/updated_pardot_api_frontend")
-def updated_pardot_api_frontend():
-    return render_template('updated_pardot_api_frontend.html')
+        return jsonify({"error": "Failed to fetch data"}), 500
 
 
 if __name__ == "__main__":
