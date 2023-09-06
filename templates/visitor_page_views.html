@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visitor Page Views</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: "Roboto", sans-serif;
+        }
+        .cta-button {
+            background-color: #1cafec;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visitor Page Views</h1>
+    <!-- Filter input fields -->
+    <input type="text" id="idInput" placeholder="ID">
+    <input type="text" id="urlInput" placeholder="URL">
+    <button class="cta-button" onclick="fetchData()">Fetch Data</button>
+    
+    <!-- Table to display data -->
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>URL</th>
+                <th>Title</th>
+                <!-- Add other columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+    
+    <script>
+        async function fetchData() {
+            const id = document.getElementById("idInput").value;
+            const url = `/fetch-visitor-page-views?id=${id}`;  // Flask route to fetch data
+            const response = await fetch(url);
+            const data = await response.json();
+            populateTable(data);
+        }
+        
+        function populateTable(data) {
+            // Function to populate the table with fetched data
+        }
+    </script>
+</body>
+</html>
