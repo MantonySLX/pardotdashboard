@@ -60,8 +60,8 @@ def get_duplicate_email_addresses():
 
     pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
         headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+            "Authorization": f"Bearer {access_token}",
+            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
     response = requests.get(pardot_url, headers=headers)
     data = response.json()
