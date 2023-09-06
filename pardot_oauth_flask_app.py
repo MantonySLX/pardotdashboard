@@ -65,7 +65,6 @@ class PardotAPI(object):
         self.visitoractivities = VisitorActivities(self)
 
 
-
 @app.route("/")
 def main():
     return render_template('main.html')
