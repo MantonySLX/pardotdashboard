@@ -50,5 +50,41 @@ def logout():
     return redirect("/")
 
 
+@app.route("/get_prospect_ids")
+def get_prospect_ids():
+    access_token = session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    # Define the API endpoint and headers
+    api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    
+    # Add any filtering parameters you need
+    params = {
+        'fields': 'id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId'
+    }
+    
+    # Make the API request
+    response = requests.get(api_endpoint, headers=headers, params=params)
+    if response.status_code != 200:
+        return jsonify({"error": "API request failed"}), 500
+    
+    data = response.json()
+    
+    # Filter the data to only include records where 'url' contains 'utm_medium=email'
+    filtered_data = [record for record in data.get('visitorPageView', []) if 'utm_medium=email' in record.get('url', '')]
+    
+    # Extract the prospect IDs and limit to first 10
+    prospect_ids = [record['visitorId'] for record in filtered_data][:10]
+    
+    return jsonify(prospect_ids)
+
+
+
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
