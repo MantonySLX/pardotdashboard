@@ -83,6 +83,32 @@ def get_prospect_ids():
     return jsonify(prospect_ids)
 
 
+@app.route("/convert_to_template", methods=["POST"])
+def convert_to_template():
+    access_token = session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    list_email_id = request.form.get("list_email_id")
+    
+    # Step 1: Fetch List Email
+    api_endpoint = f"https://pi.pardot.com/api/email/version/4/do/read/id/{list_email_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(api_endpoint, headers=headers)
+    list_email_data = response.json()
+
+    # Step 2: Create Template
+    api_endpoint = "https://pi.pardot.com/api/emailTemplate/version/4/do/create"
+    template_data = {
+        'name': list_email_data['name'] + '_template',
+        'html_content': list_email_data['html_content']
+    }
+    response = requests.post(api_endpoint, headers=headers, data=template_data)
+    
+    if response.status_code == 200:
+        return "Successfully converted to template."
+    else:
+        return "Failed to convert to template.", 500
 
 
 
