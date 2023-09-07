@@ -49,49 +49,6 @@ def logout():
     session.clear()
     return redirect("/")
 
-@app.route("/get-duplicate-email-addresses")
-def get_duplicate_email_addresses():
-    access_token = session.get("access_token")
-    if not access_token:
-        return jsonify({"error": "Access token is required"}), 400
-
-    pardot_url = "https://pi.pardot.com/api/v5/objects/prospects"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
-    }
-    response = requests.get(pardot_url, headers=headers)
-    data = response.json()
-    
-    # Your existing code for handling duplicate email addresses
-    # ...
-
-@app.route("/duplicates")
-def show_duplicates():
-    return render_template('duplicates.html')
-
-@app.route("/fetch-visitor-page-views")
-def fetch_visitor_page_views():
-    id = request.args.get('id')
-    access_token = session.get("access_token")
-    if not access_token:
-        return jsonify({"error": "Access token is required"}), 400
-    
-    pardot_url = f"https://pi.pardot.com/api/v5/objects/visitor-page-views/{id}?fields=...your_fields_here..."
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-    response = requests.get(pardot_url, headers=headers)
-    
-    if response.status_code == 200:
-        data = response.json()
-        return jsonify({"data": data})
-    else:
-        return jsonify({"error": "Failed to fetch data"}), 500
-
-@app.route("/visitor-page-views")
-def visitor_page_views():
-    return render_template('visitor_page_views.html')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
