@@ -51,26 +51,6 @@ def logout():
     session.clear()
     return redirect("/")
 
-def get_prospects_by_url(access_token):
-    api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
-    }
-    params = {
-        "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId"
-    }
-    
-    response = requests.get(api_endpoint, headers=headers, params=params)
-    
-    if response.status_code == 200:
-        data = response.json()
-        filtered_data = [item for item in data.get('data', []) if item.get('url') == 'https://saleslabx.com/demo-page/']
-        visitor_ids = [item.get('visitorId') for item in filtered_data]
-        return visitor_ids[:20]
-    else:
-        return None
-
 @app.route("/prospects_from_opportunities")
 def prospects_from_opportunities():
     access_token = session.get("access_token")
@@ -94,20 +74,23 @@ def prospects_from_opportunities():
         response = requests.get(api_endpoint, headers=headers, params=params)
         
         if response.status_code == 200:
-            try:
-                tree = ET.ElementTree(ET.fromstring(response.content))
-                root = tree.getroot()
-                
-                prospect_ids = []
-                for opportunity in root.findall(".//opportunity"):
-                    for prospect in opportunity.findall(".//prospect"):
-                        prospect_ids.append(prospect.find("id").text)
-                
-                session['prospect_ids'] = prospect_ids
-                
-                return jsonify({"prospect_ids": prospect_ids})
-            except ET.ParseError:
-                return jsonify({"error": f"Invalid XML received. Raw response: {response.text}"}), 400
+            tree = ET.ElementTree(ET.fromstring(response.content))
+            root = tree.getroot()
+            
+            prospect_ids = []
+            for opportunity in root.findall(".//opportunity"):
+                for prospect in opportunity.findall(".//prospect"):
+                    prospect_ids.append(prospect.find("id").text)
+            
+            visitor_ids = []
+            for prospect_id in prospect_ids:
+                visitor_id = get_visitor_id_by_prospect_id(prospect_id, access_token)
+                if visitor_id:
+                    visitor_ids.append(visitor_id)
+
+            session['visitor_ids'] = visitor_ids
+
+            return jsonify({"prospect_ids": prospect_ids, "visitor_ids": visitor_ids})
         else:
             return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
@@ -115,24 +98,24 @@ def prospects_from_opportunities():
 
 @app.route("/visited_urls_by_prospects")
 def visited_urls_by_prospects():
-    prospect_ids = session.get('prospect_ids')
-    if prospect_ids is None:
-        return jsonify({"error": "No prospects available"}), 404
-    
-    visited_urls_by_prospects = {}
+    visitor_ids = session.get('visitor_ids')
+    if not visitor_ids:
+        return jsonify({"error": "No visitors available"}), 404
+
+    visited_urls_by_visitors = {}
     access_token = session.get("access_token")
     if access_token is None:
         return jsonify({"error": "Not authenticated"}), 401
     
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
     }
     
-    for prospect_id in prospect_ids:
+    for visitor_id in visitor_ids:
         params = {
             "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId",
-            "prospect_id": prospect_id
+            "visitor_id": visitor_id
         }
         api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
         response = requests.get(api_endpoint, headers=headers, params=params)
@@ -140,15 +123,36 @@ def visited_urls_by_prospects():
         if response.status_code == 200:
             data = response.json()
             urls = [item.get('url') for item in data.get('data', [])]
-            visited_urls_by_prospects[prospect_id] = urls
+            visited_urls_by_visitors[visitor_id] = urls
         else:
-            error_detail = f"Failed to fetch data for prospect ID {prospect_id}. "
+            error_detail = f"Failed to fetch data for visitor ID {visitor_id}. "
             error_detail += f"Status code: {response.status_code}, "
             error_detail += f"Raw response: {response.text}"
-            print(f"Warning: {error_detail}")  # Logging the message
+            print(f"Warning: {error_detail}")
 
-    return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
+    return jsonify({"visited_urls_by_visitors": visited_urls_by_visitors})
 
+def get_visitor_id_by_prospect_id(prospect_id, access_token):
+    api_endpoint = "https://pi.pardot.com/api/v5/objects/visits"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
+    }
+    params = {
+        "prospect_id": prospect_id
+    }
+
+    response = requests.get(api_endpoint, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        visit_data = data.get("data", [])
+        if visit_data:
+            visitor_id = visit_data[0].get("visitorId")
+            return visitor_id
+        return None
+    else:
+        print(f"Failed to fetch visitor ID for prospect ID {prospect_id}. Status code: {response.status_code}")
+        return None
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
