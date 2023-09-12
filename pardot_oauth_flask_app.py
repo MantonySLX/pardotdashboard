@@ -77,9 +77,7 @@ def get_prospects_by_url(access_token):
 
 
 import xml.etree.ElementTree as ET
-# ... (your existing imports)
 
-# ... (your existing setup and routes)
 
 @app.route("/prospects_from_opportunities")
 def prospects_from_opportunities():
@@ -123,6 +121,33 @@ def prospects_from_opportunities():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+@app.route("/get_prospect_details/<prospect_id>")
+def get_prospect_details(prospect_id):
+    access_token = session.get("access_token")
+    if access_token is None:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    try:
+        api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+        }
+        params = {
+            "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId",
+            "prospect_id": prospect_id
+        }
+        
+        response = requests.get(api_endpoint, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            urls = [item.get('url') for item in data.get('data', [])]
+            return jsonify({"urls": urls})
+        else:
+            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
