@@ -51,75 +51,13 @@ def logout():
     return redirect("/")
 
 @app.route("/prospects_from_opportunities")
-def prospects_from_opportunities():
+def prospects_from_opportunities_route():
     access_token = session.get("access_token")
     if access_token is None:
         return jsonify({"error": "Not authenticated"}), 401
-    
-    try:
-        # Calculate the date 6 months ago
-        six_months_ago = datetime.now() - timedelta(days=180)
-        six_months_ago_str = six_months_ago.strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Fetch Opportunities created in the last 6 months using Pardot API
-        api_endpoint = "https://pi.pardot.com/api/opportunity/version/4/do/query"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
-        }
-        params = {
-            "created_after": six_months_ago_str,
-            "fields": "id,prospect_id"
-        }
-        
-        response = requests.get(api_endpoint, headers=headers, params=params)
-        
-        if response.status_code == 200:
-            tree = ET.ElementTree(ET.fromstring(response.content))
-            root = tree.getroot()
 
-            # Initialize a dictionary to store prospect IDs and their visited URLs
-            prospect_visited_urls = {}
-
-            for opportunity in root.findall(".//opportunity"):
-                opportunity_id = opportunity.find("id").text
-                opportunity_created_at = opportunity.find("created_at").text
-
-                for prospect in opportunity.findall(".//prospect"):
-                    prospect_id = prospect.find("id").text
-
-                    # Fetch URLs visited by the prospect
-                    api_endpoint = f"https://pi.pardot.com/api/visitorActivity/version/3/do/query?prospect_id={prospect_id}"
-                    headers = {
-                        "Authorization": f"Bearer {access_token}",
-                        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
-                    }
-                    response = requests.get(api_endpoint, headers=headers)
-
-                    if response.status_code == 200:
-                        try:
-                            tree = ET.ElementTree(ET.fromstring(response.content))
-                            root = tree.getroot()
-
-                            urls = []
-                            for activity in root.findall(".//visitor_activity"):
-                                timestamp = activity.find("timestamp").text
-                                if timestamp < opportunity_created_at:
-                                    url = activity.find("details").text
-                                    urls.append(url)
-
-                            prospect_visited_urls[prospect_id] = urls[-5:]
-
-                        except ET.ParseError:
-                            continue
-                    else:
-                        continue
-            
-            return jsonify({"prospect_visited_urls": prospect_visited_urls})
-        else:
-            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    task = fetch_prospects_from_opportunities.apply_async(args=[access_token])
+    return jsonify({"status": "Task started", "task_id": str(task.id)}), 202
 
 
 if __name__ == "__main__":
