@@ -100,19 +100,20 @@ def prospects_from_opportunities():
         response = requests.get(api_endpoint, headers=headers, params=params)
         
         if response.status_code == 200:
-            data = response.json()
-            # Check if the 'result' and 'opportunity' keys exist in the response
+            try:
+                data = response.json()
+            except ValueError:
+                return jsonify({"error": f"Invalid JSON received. Raw response: {response.text}"}), 400
+            
             if 'result' in data and 'opportunity' in data['result']:
-                # Extract the prospect IDs from the Opportunity records
                 prospect_ids = [record.get("prospect_id") for record in data.get("result", {}).get("opportunity", [])]
                 return jsonify({"prospect_ids": prospect_ids})
             else:
                 return jsonify({"error": "Unexpected data format"}), 400
         else:
-            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}"}), 400
+            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
 
 
 
