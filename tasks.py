@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
 # Initialize Celery
-celery = Celery('tasks', broker='redis://localhost:6379/0')
+celery = Celery('tasks', broker='redis:https://pardotdashboard-7fc843d1f87a.herokuapp.com/')
 
 @celery.task
 def fetch_prospects_from_opportunities(access_token):
