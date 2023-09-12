@@ -4,6 +4,8 @@ from requests_oauthlib import OAuth2Session
 import xml.etree.ElementTree as ET
 import os
 import requests
+from tasks import fetch_prospects_from_opportunities
+
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
