@@ -126,7 +126,7 @@ def visited_urls_by_prospects():
     
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
     }
     
     for prospect_id in prospect_ids:
@@ -145,9 +145,10 @@ def visited_urls_by_prospects():
             error_detail = f"Failed to fetch data for prospect ID {prospect_id}. "
             error_detail += f"Status code: {response.status_code}, "
             error_detail += f"Raw response: {response.text}"
-            return jsonify({"error": error_detail}), 400
+            print(f"Warning: {error_detail}")  # Logging the message
 
     return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
