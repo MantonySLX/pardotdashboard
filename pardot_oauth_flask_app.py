@@ -49,38 +49,42 @@ def logout():
     session.clear()
     return redirect("/")
 
+import requests
 
-@app.route("/get_prospect_ids")
-def get_prospect_ids():
-    access_token = session.get("access_token")
-    if not access_token:
-        return jsonify({"error": "Not authenticated"}), 401
-    
-    # Define the API endpoint and headers
+def get_prospects_by_url(access_token):
     api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
     headers = {
-        "Authorization": f"Bearer {access_token}"
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",  # Business Unit ID
     }
-    
-    # Add any filtering parameters you need
     params = {
-        'fields': 'id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId'
+        "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId"
     }
     
-    # Make the API request
     response = requests.get(api_endpoint, headers=headers, params=params)
-    if response.status_code != 200:
-        return jsonify({"error": "API request failed"}), 500
     
-    data = response.json()
-    
-    # Filter the data to only include records where 'url' contains 'utm_medium=email'
-    filtered_data = [record for record in data.get('visitorPageView', []) if 'utm_medium=email' in record.get('url', '')]
-    
-    # Extract the prospect IDs and limit to first 10
-    prospect_ids = [record['visitorId'] for record in filtered_data][:10]
-    
-    return jsonify(prospect_ids)
+    if response.status_code == 200:
+        data = response.json()
+        # Filter the results where URL is https://saleslabx.com/demo-page/
+        filtered_data = [item for item in data.get('data', []) if item.get('url') == 'https://saleslabx.com/demo-page/']
+        # Extract the visitor IDs from the filtered data
+        visitor_ids = [item.get('visitorId') for item in filtered_data]
+        return visitor_ids[:20]  # Limit to first 20
+    else:
+        return None
+
+@app.route("/find_prospects")
+def find_prospects():
+    access_token = session.get("access_token")
+    if access_token:
+        prospects = get_prospects_by_url(access_token)
+        if prospects:
+            return jsonify({"prospect_ids": prospects})
+        else:
+            return jsonify({"error": "Could not fetch prospects"}), 400
+    else:
+        return jsonify({"error": "Not authenticated"}), 401
+
 
 
 
