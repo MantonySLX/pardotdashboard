@@ -3,11 +3,8 @@ from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
 import xml.etree.ElementTree as ET
 import os
-redis_url = os.environ.get('REDIS_URL')
 import requests
-from tasks import fetch_prospects_from_opportunities
-
-
+import collections
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -54,14 +51,77 @@ def logout():
     session.clear()
     return redirect("/")
 
+import requests
+
+def get_prospects_by_url(access_token):
+    api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",  # Business Unit ID
+    }
+    params = {
+        "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId"
+    }
+    
+    response = requests.get(api_endpoint, headers=headers, params=params)
+    
+    if response.status_code == 200:
+        data = response.json()
+        # Filter the results where URL is https://saleslabx.com/demo-page/
+        filtered_data = [item for item in data.get('data', []) if item.get('url') == 'https://saleslabx.com/demo-page/']
+        # Extract the visitor IDs from the filtered data
+        visitor_ids = [item.get('visitorId') for item in filtered_data]
+        return visitor_ids[:20]  # Limit to first 20
+    else:
+        return None
+
+
+import xml.etree.ElementTree as ET
+# ... (your existing imports)
+
+# ... (your existing setup and routes)
+
 @app.route("/prospects_from_opportunities")
-def prospects_from_opportunities_route():
+def prospects_from_opportunities():
     access_token = session.get("access_token")
     if access_token is None:
         return jsonify({"error": "Not authenticated"}), 401
-
-    task = fetch_prospects_from_opportunities.apply_async(args=[access_token])
-    return jsonify({"status": "Task started", "task_id": str(task.id)}), 202
+    
+    try:
+        # Calculate the date 6 months ago
+        six_months_ago = datetime.now() - timedelta(days=180)
+        six_months_ago_str = six_months_ago.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Fetch Opportunities created in the last 6 months using Pardot API
+        api_endpoint = "https://pi.pardot.com/api/opportunity/version/4/do/query"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+        }
+        params = {
+            "created_after": six_months_ago_str,
+            "fields": "id,prospect_id"
+        }
+        
+        response = requests.get(api_endpoint, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            try:
+                tree = ET.ElementTree(ET.fromstring(response.content))
+                root = tree.getroot()
+                
+                prospect_ids = []
+                for opportunity in root.findall(".//opportunity"):
+                    for prospect in opportunity.findall(".//prospect"):
+                        prospect_ids.append(prospect.find("id").text)
+                
+                return jsonify({"prospect_ids": prospect_ids})
+            except ET.ParseError:
+                return jsonify({"error": f"Invalid XML received. Raw response: {response.text}"}), 400
+        else:
+            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
