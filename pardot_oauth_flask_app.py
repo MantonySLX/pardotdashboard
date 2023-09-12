@@ -76,6 +76,11 @@ def get_prospects_by_url(access_token):
         return None
 
 
+import xml.etree.ElementTree as ET
+# ... (your existing imports)
+
+# ... (your existing setup and routes)
+
 @app.route("/prospects_from_opportunities")
 def prospects_from_opportunities():
     access_token = session.get("access_token")
@@ -102,21 +107,21 @@ def prospects_from_opportunities():
         
         if response.status_code == 200:
             try:
-                data = response.json()
-            except ValueError:
-                return jsonify({"error": f"Invalid JSON received. Raw response: {response.text}"}), 400
-            
-            if 'result' in data and 'opportunity' in data['result']:
-                prospect_ids = [record.get("prospect_id") for record in data.get("result", {}).get("opportunity", [])]
+                tree = ET.ElementTree(ET.fromstring(response.content))
+                root = tree.getroot()
+                
+                prospect_ids = []
+                for opportunity in root.findall(".//opportunity"):
+                    for prospect in opportunity.findall(".//prospect"):
+                        prospect_ids.append(prospect.find("id").text)
+                
                 return jsonify({"prospect_ids": prospect_ids})
-            else:
-                return jsonify({"error": "Unexpected data format"}), 400
+            except ET.ParseError:
+                return jsonify({"error": f"Invalid XML received. Raw response: {response.text}"}), 400
         else:
             return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
-
 
 
 if __name__ == "__main__":
