@@ -144,12 +144,19 @@ def get_visitor_id_by_prospect_id(prospect_id, access_token):
 
     response = requests.get(api_endpoint, headers=headers, params=params)
     if response.status_code == 200:
-        data = response.json()
-        visit_data = data.get("data", [])
-        if visit_data:
-            visitor_id = visit_data[0].get("visitorId")
-            return visitor_id
-        return None
+        if not response.content.strip():
+            print(f"No content returned for prospect ID {prospect_id}.")
+            return None
+
+        try:
+            data = response.json()
+            visit_data = data.get("data", [])
+            if visit_data:
+                visitor_id = visit_data[0].get("visitorId")
+                return visitor_id
+        except ValueError:
+            print(f"Failed to parse response as JSON for prospect ID {prospect_id}. Raw response: {response.text}")
+            return None
     else:
         print(f"Failed to fetch visitor ID for prospect ID {prospect_id}. Status code: {response.status_code}")
         print(f"Error message: {response.text}")
