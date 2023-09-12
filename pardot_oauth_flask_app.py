@@ -115,6 +115,8 @@ def prospects_from_opportunities():
                     for prospect in opportunity.findall(".//prospect"):
                         prospect_ids.append(prospect.find("id").text)
                 
+                session['prospect_ids'] = prospect_ids  # Storing in session
+                
                 return jsonify({"prospect_ids": prospect_ids})
             except ET.ParseError:
                 return jsonify({"error": f"Invalid XML received. Raw response: {response.text}"}), 400
@@ -122,6 +124,40 @@ def prospects_from_opportunities():
             return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route("/visited_urls_by_prospects")
+def visited_urls_by_prospects():
+    prospect_ids = session.get('prospect_ids')
+    if prospect_ids is None:
+        return jsonify({"error": "No prospects available"}), 404
+    
+    visited_urls_by_prospects = {}
+    access_token = session.get("access_token")
+    if access_token is None:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+    }
+    
+    for prospect_id in prospect_ids:
+        params = {
+            "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId",
+            "prospect_id": prospect_id
+        }
+        api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
+        response = requests.get(api_endpoint, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            urls = [item.get('url') for item in data.get('data', [])]
+            visited_urls_by_prospects[prospect_id] = urls
+        else:
+            return jsonify({"error": f"Failed to fetch data for prospect ID {prospect_id}. Status code: {response.status_code}"}), 400
+    
+    return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
+
 
 
 if __name__ == "__main__":
