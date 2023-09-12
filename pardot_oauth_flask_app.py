@@ -73,17 +73,44 @@ def get_prospects_by_url(access_token):
     else:
         return None
 
-@app.route("/find_prospects")
-def find_prospects():
+
+@app.route("/prospects_from_opportunities")
+def prospects_from_opportunities():
     access_token = session.get("access_token")
-    if access_token:
-        prospects = get_prospects_by_url(access_token)
-        if prospects:
-            return jsonify({"prospect_ids": prospects})
-        else:
-            return jsonify({"error": "Could not fetch prospects"}), 400
-    else:
+    if access_token is None:
         return jsonify({"error": "Not authenticated"}), 401
+    
+    try:
+        # Calculate the date 6 months ago
+        six_months_ago = datetime.now() - timedelta(days=180)
+        six_months_ago_str = six_months_ago.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Fetch Opportunities created in the last 6 months using Pardot API
+        api_endpoint = "https://pi.pardot.com/api/opportunity/version/4/do/query"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+        }
+        params = {
+            "created_after": six_months_ago_str,
+            "fields": "id,prospect_id"
+        }
+        
+        response = requests.get(api_endpoint, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Check if the 'result' and 'opportunity' keys exist in the response
+            if 'result' in data and 'opportunity' in data['result']:
+                # Extract the prospect IDs from the Opportunity records
+                prospect_ids = [record.get("prospect_id") for record in data.get("result", {}).get("opportunity", [])]
+                return jsonify({"prospect_ids": prospect_ids})
+            else:
+                return jsonify({"error": "Unexpected data format"}), 400
+        else:
+            return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 
