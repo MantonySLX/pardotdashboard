@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prospect Details</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        ul {
+            list-style-type: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visited URLs by Prospect</h1>
+    <ul id="urlList"></ul>
+    <script>
+        $(document).ready(function(){
+            let prospectId = window.location.pathname.split('/').pop();
+            $.ajax({
+                url: '/get_prospect_details/' + prospectId,
+                method: 'GET',
+                success: function(response){
+                    let urls = response.urls;
+                    $("#urlList").empty();
+                    urls.forEach(function(url){
+                        $("#urlList").append('<li>' + url + '</li>');
+                    });
+                },
+                error: function(error){
+                    console.log("Error:", error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

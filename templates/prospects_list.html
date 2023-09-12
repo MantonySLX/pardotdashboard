@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prospects List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        button {
+            background-color: #1cafec;
+            color: white;
+            padding: 15px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prospects List</h1>
+    <button id="loadProspects">Load Prospects</button>
+    <ul id="prospectList"></ul>
+    <script>
+        $(document).ready(function(){
+            $("#loadProspects").click(function(){
+                $.ajax({
+                    url: '/get_prospects',
+                    method: 'GET',
+                    success: function(response){
+                        let prospects = response.prospect_ids;
+                        $("#prospectList").empty();
+                        prospects.forEach(function(id){
+                            $("#prospectList").append('<li><a href="/prospect_details/' + id + '">' + id + '</a></li>');
+                        });
+                    },
+                    error: function(error){
+                        console.log("Error:", error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
