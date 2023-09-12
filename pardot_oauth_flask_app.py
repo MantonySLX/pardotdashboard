@@ -106,18 +106,47 @@ def prospects_from_opportunities():
         response = requests.get(api_endpoint, headers=headers, params=params)
         
         if response.status_code == 200:
-            try:
-                tree = ET.ElementTree(ET.fromstring(response.content))
-                root = tree.getroot()
-                
-                prospect_ids = []
-                for opportunity in root.findall(".//opportunity"):
-                    for prospect in opportunity.findall(".//prospect"):
-                        prospect_ids.append(prospect.find("id").text)
-                
-                return jsonify({"prospect_ids": prospect_ids})
-            except ET.ParseError:
-                return jsonify({"error": f"Invalid XML received. Raw response: {response.text}"}), 400
+            tree = ET.ElementTree(ET.fromstring(response.content))
+            root = tree.getroot()
+
+            # Initialize a dictionary to store prospect IDs and their visited URLs
+            prospect_visited_urls = {}
+
+            for opportunity in root.findall(".//opportunity"):
+                opportunity_id = opportunity.find("id").text
+                opportunity_created_at = opportunity.find("created_at").text
+
+                for prospect in opportunity.findall(".//prospect"):
+                    prospect_id = prospect.find("id").text
+
+                    # Fetch URLs visited by the prospect
+                    api_endpoint = f"https://pi.pardot.com/api/visitorActivity/version/3/do/query?prospect_id={prospect_id}"
+                    headers = {
+                        "Authorization": f"Bearer {access_token}",
+                        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG"  # Your Business Unit ID
+                    }
+                    response = requests.get(api_endpoint, headers=headers)
+
+                    if response.status_code == 200:
+                        try:
+                            tree = ET.ElementTree(ET.fromstring(response.content))
+                            root = tree.getroot()
+
+                            urls = []
+                            for activity in root.findall(".//visitor_activity"):
+                                timestamp = activity.find("timestamp").text
+                                if timestamp < opportunity_created_at:
+                                    url = activity.find("details").text
+                                    urls.append(url)
+
+                            prospect_visited_urls[prospect_id] = urls[-5:]
+
+                        except ET.ParseError:
+                            continue
+                    else:
+                        continue
+            
+            return jsonify({"prospect_visited_urls": prospect_visited_urls})
         else:
             return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
