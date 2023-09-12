@@ -149,12 +149,24 @@ def visited_urls_by_prospects():
         api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
         response = requests.get(api_endpoint, headers=headers, params=params)
         
-        if response.status_code == 200:
-            data = response.json()
-            urls = [item.get('url') for item in data.get('data', [])]
-            visited_urls_by_prospects[prospect_id] = urls
-        else:
-            return jsonify({"error": f"Failed to fetch data for prospect ID {prospect_id}. Status code: {response.status_code}"}), 400
+        for prospect_id in prospect_ids:
+    params = {
+        "fields": "id,url,title,createdAt,visitorId,campaignId,visitId,durationInSeconds,salesforceId",
+        "prospect_id": prospect_id
+    }
+    api_endpoint = "https://pi.pardot.com/api/v5/objects/visitor-page-views"
+    response = requests.get(api_endpoint, headers=headers, params=params)
+    
+    if response.status_code == 200:
+        data = response.json()
+        urls = [item.get('url') for item in data.get('data', [])]
+        visited_urls_by_prospects[prospect_id] = urls
+    else:
+        error_detail = f"Failed to fetch data for prospect ID {prospect_id}. "
+        error_detail += f"Status code: {response.status_code}, "
+        error_detail += f"Raw response: {response.text}"
+        return jsonify({"error": error_detail}), 400
+
     
     return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
 
