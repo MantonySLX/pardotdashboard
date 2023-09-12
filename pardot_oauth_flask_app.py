@@ -6,6 +6,14 @@ import os
 import requests
 import collections
 
+@app.route("/prospects")
+def prospects():
+    return render_template('prospects_list.html')
+
+@app.route("/prospect_details/<prospect_id>")
+def prospect_details(prospect_id):
+    return render_template('prospect_details.html')
+
 # Setup Flask app and environment variables
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
