@@ -133,7 +133,7 @@ def visited_urls_by_prospects():
     return jsonify({"visited_urls_by_visitors": visited_urls_by_visitors})
 
 def get_visitor_id_by_prospect_id(prospect_id, access_token):
-    api_endpoint = "https://pi.pardot.com/api/v5/objects/visits"
+    api_endpoint = "https://pi.pardot.com/api/visitor/version/4/do/query"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
@@ -152,6 +152,7 @@ def get_visitor_id_by_prospect_id(prospect_id, access_token):
         return None
     else:
         print(f"Failed to fetch visitor ID for prospect ID {prospect_id}. Status code: {response.status_code}")
+        print(f"Error message: {response.text}")
         return None
 
 if __name__ == "__main__":
