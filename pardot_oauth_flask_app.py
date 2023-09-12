@@ -6,13 +6,6 @@ import os
 import requests
 import collections
 
-@app.route("/prospects")
-def prospects():
-    return render_template('prospects_list.html')
-
-@app.route("/prospect_details/<prospect_id>")
-def prospect_details(prospect_id):
-    return render_template('prospect_details.html')
 
 # Setup Flask app and environment variables
 app = Flask(__name__)
@@ -156,6 +149,14 @@ def get_prospect_details(prospect_id):
             return jsonify({"error": f"Failed to fetch data. Status code: {response.status_code}, Raw response: {response.text}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route("/prospects")
+def prospects():
+    return render_template('prospects_list.html')
+
+@app.route("/prospect_details/<prospect_id>")
+def prospect_details(prospect_id):
+    return render_template('prospect_details.html')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
