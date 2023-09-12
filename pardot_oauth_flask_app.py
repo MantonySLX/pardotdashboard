@@ -3,8 +3,10 @@ from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
 import xml.etree.ElementTree as ET
 import os
+redis_url = os.environ.get('REDIS_URL')
 import requests
 from tasks import fetch_prospects_from_opportunities
+
 
 
 # Setup Flask app and environment variables
