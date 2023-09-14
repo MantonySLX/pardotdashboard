@@ -150,6 +150,7 @@ def visited_urls_by_prospects():
 
     return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
 
+
 @app.route("/capture_visitor_id", methods=["POST"])
 def capture_visitor_id():
     visitor_id = request.json.get("visitor_id", None)
@@ -174,8 +175,8 @@ def capture_visitor_id():
     
     email = response.json().get('visitor', {}).get('email', '')
     
-    # Send this email and page title to the SalesLabX endpoint
-    saleslabx_endpoint = f"https://www2.saleslabx.com/l/722833/2023-09-14/33z87j?email={email}&content={page_title}"
+    # Send this email and page title to the SalesLabX endpoint on ww2.SalesLabX.com
+    saleslabx_endpoint = f"https://ww2.saleslabx.com/l/722833/2023-09-14/33z87j?email={email}&content={page_title}"
     saleslabx_response = requests.get(saleslabx_endpoint)
     
     if saleslabx_response.status_code == 200:
