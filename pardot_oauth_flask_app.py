@@ -151,42 +151,6 @@ def visited_urls_by_prospects():
     return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
 
 
-@app.route("/capture_visitor_id", methods=["POST"])
-def capture_visitor_id():
-    visitor_id = request.json.get("visitor_id", None)
-    page_title = request.json.get("page_title", None)
-    if visitor_id is None or page_title is None:
-        return jsonify({"error": "No visitor_id or page_title provided"}), 400
-    
-    access_token = session.get("access_token")
-    if access_token is None:
-        return jsonify({"error": "Not authenticated"}), 401
-    
-    # Fetch email using the Pardot API based on the visitor_id
-    api_endpoint = f"https://pi.pardot.com/api/visitor/version/4/do/read/id/{visitor_id}"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
-    }
-    
-    response = requests.get(api_endpoint, headers=headers)
-    if response.status_code != 200:
-        return jsonify({"error": "Failed to fetch email from Pardot"}), 400
-    
-    email = response.json().get('visitor', {}).get('email', '')
-    
-    # Update the Prospect record with the page title in field AI_Content
-    update_prospect_endpoint = f"https://pi.pardot.com/api/prospect/version/4/do/update/email/{email}"
-    update_data = {
-        'AI_Content': page_title
-    }
-    update_response = requests.post(update_prospect_endpoint, headers=headers, data=update_data)
-    
-    if update_response.status_code == 200:
-        return jsonify({"success": "Page title updated in Prospect record", "email": email})
-    else:
-        return jsonify({"error": "Failed to update Prospect record"}), 400
-
 
 @app.route("/capture_visitor_id", methods=["POST"])
 def capture_visitor_id():
@@ -224,6 +188,8 @@ def capture_visitor_id():
     else:
         return jsonify({"error": "Failed to update Prospect record"}), 400
 
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 
 if __name__ == "__main__":
