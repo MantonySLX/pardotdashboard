@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Flask, redirect, request, jsonify, render_template, session
 from requests_oauthlib import OAuth2Session
+from flask import make_response 
 import xml.etree.ElementTree as ET
 import os
 import requests
@@ -148,6 +149,40 @@ def visited_urls_by_prospects():
             print(f"Warning: {error_detail}")  # Logging the message
 
     return jsonify({"visited_urls_by_prospects": visited_urls_by_prospects})
+
+@app.route("/capture_visitor_id", methods=["POST"])
+def capture_visitor_id():
+    visitor_id = request.json.get("visitor_id", None)
+    page_title = request.json.get("page_title", None)
+    if visitor_id is None or page_title is None:
+        return jsonify({"error": "No visitor_id or page_title provided"}), 400
+    
+    access_token = session.get("access_token")
+    if access_token is None:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    # Fetch email using the Pardot API based on the visitor_id
+    api_endpoint = f"https://pi.pardot.com/api/visitor/version/4/do/read/id/{visitor_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Pardot-Business-Unit-Id": "0Uv5A000000PAzxSAG",
+    }
+    
+    response = requests.get(api_endpoint, headers=headers)
+    if response.status_code != 200:
+        return jsonify({"error": "Failed to fetch email from Pardot"}), 400
+    
+    email = response.json().get('visitor', {}).get('email', '')
+    
+    # Send this email and page title to the SalesLabX endpoint
+    saleslabx_endpoint = f"https://www2.saleslabx.com/l/722833/2023-09-14/33z87j?email={email}&content={page_title}"
+    saleslabx_response = requests.get(saleslabx_endpoint)
+    
+    if saleslabx_response.status_code == 200:
+        return jsonify({"success": "Email and page title sent to SalesLabX endpoint", "email": email})
+    else:
+        return jsonify({"error": "Failed to send data to SalesLabX endpoint"}), 400
+
 
 
 if __name__ == "__main__":
