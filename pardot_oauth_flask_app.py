@@ -175,14 +175,18 @@ def capture_visitor_id():
     
     email = response.json().get('visitor', {}).get('email', '')
     
-    # Send this email and page title to the SalesLabX endpoint on ww2.SalesLabX.com
-    saleslabx_endpoint = f"https://ww2.saleslabx.com/l/722833/2023-09-14/33z87j?email={email}&content={page_title}"
-    saleslabx_response = requests.get(saleslabx_endpoint)
+    # Update the Prospect record with the page title in field AI_Content
+    update_prospect_endpoint = f"https://pi.pardot.com/api/prospect/version/4/do/update/email/{email}"
+    update_data = {
+        'AI_Content': page_title
+    }
+    update_response = requests.post(update_prospect_endpoint, headers=headers, data=update_data)
     
-    if saleslabx_response.status_code == 200:
-        return jsonify({"success": "Email and page title sent to SalesLabX endpoint", "email": email})
+    if update_response.status_code == 200:
+        return jsonify({"success": "Page title updated in Prospect record", "email": email})
     else:
-        return jsonify({"error": "Failed to send data to SalesLabX endpoint"}), 400
+        return jsonify({"error": "Failed to update Prospect record"}), 400
+
 
 
 
